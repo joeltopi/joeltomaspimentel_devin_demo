@@ -35,7 +35,7 @@ export default async function AppListPage({
     <Shell user={user}>
       <h1 className="text-xl font-semibold">{spec.title}</h1>
       <p className="mb-6 text-sm text-slate-600">{spec.description}</p>
-      <ResourceTable spec={spec} rows={rows} filters={filters} />
+      <ResourceTable spec={spec} rows={rows} />
     </Shell>
   );
 }

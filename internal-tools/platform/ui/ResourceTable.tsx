@@ -4,19 +4,11 @@ import { idField } from "@platform/db/generic";
 import { formatValue } from "./format";
 import { ResourceFilters } from "./ResourceFilters";
 
-export function ResourceTable({
-  spec,
-  rows,
-  filters,
-}: {
-  spec: AppSpec;
-  rows: Row[];
-  filters: Record<string, string>;
-}) {
+export function ResourceTable({ spec, rows }: { spec: AppSpec; rows: Row[] }) {
   return (
     <div className="space-y-3">
       {spec.filters && spec.filters.length > 0 ? (
-        <ResourceFilters filters={spec.filters} values={filters} />
+        <ResourceFilters filters={spec.filters} />
       ) : null}
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
