@@ -2,44 +2,13 @@ import Link from "next/link";
 import type { AppSpec, Row } from "@platform/spec";
 import { idField } from "@platform/db/generic";
 import { formatValue } from "./format";
+import { ResourceFilters } from "./ResourceFilters";
 
-export function ResourceTable({
-  spec,
-  rows,
-  filters,
-}: {
-  spec: AppSpec;
-  rows: Row[];
-  filters: Record<string, string>;
-}) {
+export function ResourceTable({ spec, rows }: { spec: AppSpec; rows: Row[] }) {
   return (
     <div className="space-y-3">
       {spec.filters && spec.filters.length > 0 ? (
-        <form className="flex flex-wrap items-end gap-3" method="get">
-          {spec.filters.map((filter) => (
-            <label key={filter.field} className="text-xs font-medium text-slate-600">
-              <span className="mb-1 block">{filter.label}</span>
-              <select
-                name={filter.field}
-                defaultValue={filters[filter.field] ?? ""}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm"
-              >
-                <option value="">All</option>
-                {filter.options.map((option) => (
-                  <option key={option} value={option}>
-                    {option.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
-          <button
-            type="submit"
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50"
-          >
-            Apply
-          </button>
-        </form>
+        <ResourceFilters filters={spec.filters} />
       ) : null}
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
