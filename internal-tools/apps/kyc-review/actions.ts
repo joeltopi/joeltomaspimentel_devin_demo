@@ -92,8 +92,17 @@ function caseLabel(row: KycCaseRow): string {
   return `${row.applicantName} (${row.country})${flags}`;
 }
 
+/**
+ * Best effort: the channel post is informational, so a Slack outage must not
+ * fail an action whose case transition has already committed. The attempt is
+ * still in the audit trail either way.
+ */
 async function announce(text: string): Promise<void> {
-  await getIntegration("slack").postMessage(SLACK_CHANNEL, text);
+  try {
+    await getIntegration("slack").postMessage(SLACK_CHANNEL, text);
+  } catch (error) {
+    console.error(`[${APP_KEY}] slack announcement failed`, error);
+  }
 }
 
 export async function claim(id: string, user: Actor): Promise<void> {

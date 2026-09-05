@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { registerAppModel } from "@platform/audit/appIndex";
 import { runWithActor } from "@platform/auth/context";
 import { db } from "@platform/db/client";
+import { slackMock } from "@platform/integrations/slack/mock";
 import { ForbiddenError, type Actor } from "@platform/permissions/can";
 import { ROLES, type Role } from "@platform/permissions/roles";
 import { ActionError } from "@platform/spec";
@@ -232,5 +233,19 @@ describe("audit trail", () => {
     });
     expect(post?.actorId).toBe(kai.id);
     expect(JSON.stringify(post?.meta)).toContain(SLACK_CHANNEL);
+  });
+
+  it("keeps the decision when the announcement fails", async () => {
+    const post = vi.spyOn(slackMock, "postMessage").mockRejectedValue(new Error("slack is down"));
+    const id = await makeCase({ status: "in_review", assignee: kai });
+
+    try {
+      await runWithActor(kai, () => approve(id, kai, { note: "looks fine" }));
+    } finally {
+      post.mockRestore();
+    }
+
+    const row = await db.kycCase.findUniqueOrThrow({ where: { id } });
+    expect(row.status).toBe("approved");
   });
 });
