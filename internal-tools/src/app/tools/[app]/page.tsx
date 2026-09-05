@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { getApp } from "@apps/registry";
 import { requireUser } from "@platform/auth/session";
 import { listRecords } from "@platform/db/generic";
-import { assertCan } from "@platform/permissions/can";
+import { can } from "@platform/permissions/can";
+import { Forbidden } from "@platform/ui/Forbidden";
 import { ResourceTable } from "@platform/ui/ResourceTable";
 import { Shell } from "@platform/ui/Shell";
 
@@ -18,7 +19,9 @@ export default async function AppListPage({
   const spec = getApp(app);
   if (!spec) notFound();
 
-  assertCan(user, spec.key, "read");
+  if (!can(user, spec.key, "read")) {
+    return <Forbidden user={user} resource={spec.key} action="read" />;
+  }
 
   const query = await searchParams;
   const filters: Record<string, string> = {};

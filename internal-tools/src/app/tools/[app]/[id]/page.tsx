@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { getApp } from "@apps/registry";
 import { requireUser } from "@platform/auth/session";
 import { getRecord } from "@platform/db/generic";
-import { assertCan, can } from "@platform/permissions/can";
+import { can } from "@platform/permissions/can";
 import { ActionBar, type ActionButton } from "@platform/ui/ActionBar";
+import { Forbidden } from "@platform/ui/Forbidden";
 import { ResourceForm, type FormField } from "@platform/ui/ResourceForm";
 import { Shell } from "@platform/ui/Shell";
 import { Card } from "@platform/ui/primitives";
@@ -26,7 +27,9 @@ export default async function RecordPage({
   const spec = getApp(app);
   if (!spec) notFound();
 
-  assertCan(user, spec.key, "read");
+  if (!can(user, spec.key, "read")) {
+    return <Forbidden user={user} resource={spec.key} action="read" />;
+  }
 
   const record = await getRecord(spec, id);
   if (!record) notFound();
