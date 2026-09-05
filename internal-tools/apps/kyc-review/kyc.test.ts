@@ -5,7 +5,7 @@ import { db } from "@platform/db/client";
 import { ForbiddenError, type Actor } from "@platform/permissions/can";
 import { ROLES, type Role } from "@platform/permissions/roles";
 import { ActionError } from "@platform/spec";
-import { approve, claim, override, reject, requestInfo } from "./actions";
+import { approve, claim, override, reject, requestInfo, SLACK_CHANNEL } from "./actions";
 import { kycReview } from "./spec";
 
 // `apps/registry.ts` does this at import time; the test does not go through it.
@@ -220,5 +220,17 @@ describe("audit trail", () => {
       where: { action: "integration", recordId: "email" },
     });
     expect(integrationRowsAfter).toBe(integrationRowsBefore + 1);
+  });
+
+  it("announces the decision to the KYC channel", async () => {
+    const id = await makeCase({ status: "in_review", assignee: kai });
+    await runWithActor(kai, () => approve(id, kai, { note: "verified against the register" }));
+
+    const post = await db.auditLog.findFirst({
+      where: { action: "integration", recordId: "slack" },
+      orderBy: { at: "desc" },
+    });
+    expect(post?.actorId).toBe(kai.id);
+    expect(JSON.stringify(post?.meta)).toContain(SLACK_CHANNEL);
   });
 });

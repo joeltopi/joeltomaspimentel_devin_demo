@@ -6,6 +6,9 @@ import { ActionError } from "@platform/spec";
 
 export const APP_KEY = "kyc-review";
 
+/** The queue's own channel; another app announces to its own without touching the platform. */
+export const SLACK_CHANNEL = "#kyc-ops";
+
 export type KycCaseRow = {
   id: string;
   applicantName: string;
@@ -84,6 +87,15 @@ async function notifyApplicant(row: KycCaseRow, subject: string, body: string): 
   await getIntegration("email").send(row.applicantEmail, subject, body);
 }
 
+function caseLabel(row: KycCaseRow): string {
+  const flags = row.riskFlags.length > 0 ? ` [${row.riskFlags.join(", ")}]` : "";
+  return `${row.applicantName} (${row.country})${flags}`;
+}
+
+async function announce(text: string): Promise<void> {
+  await getIntegration("slack").postMessage(SLACK_CHANNEL, text);
+}
+
 export async function claim(id: string, user: Actor): Promise<void> {
   assertCan(user, APP_KEY, "claim");
 
@@ -97,6 +109,8 @@ export async function claim(id: string, user: Actor): Promise<void> {
     { status: "pending" },
     { status: "in_review", assigneeId: user.id, assigneeName: user.name },
   );
+
+  await announce(`${user.name} claimed ${caseLabel(row)}.`);
 }
 
 export async function approve(
@@ -121,6 +135,8 @@ export async function approve(
     "Your identity verification is approved",
     `Hello ${row.applicantName}, your verification has been approved. ${note}`,
   );
+
+  await announce(`${user.name} approved ${caseLabel(row)}. ${note}`);
 }
 
 export async function reject(id: string, user: Actor, input?: { note?: string }): Promise<void> {
@@ -141,6 +157,8 @@ export async function reject(id: string, user: Actor, input?: { note?: string })
     "Your identity verification could not be completed",
     `Hello ${row.applicantName}, your verification was not approved. ${note}`,
   );
+
+  await announce(`${user.name} rejected ${caseLabel(row)}. ${note}`);
 }
 
 export async function requestInfo(
@@ -165,6 +183,8 @@ export async function requestInfo(
     "We need more information to verify your identity",
     `Hello ${row.applicantName}, we need more from you. ${note}`,
   );
+
+  await announce(`${user.name} asked ${caseLabel(row)} for more information. ${note}`);
 }
 
 /** Lets a lead take over a case an analyst is sitting on, before it is decided. */
@@ -181,4 +201,6 @@ export async function override(id: string, user: Actor): Promise<void> {
     { status: { notIn: ["approved", "rejected"] } },
     { status: "in_review", assigneeId: user.id, assigneeName: user.name },
   );
+
+  await announce(`${user.name} took over ${caseLabel(row)} from ${row.assigneeName ?? "the queue"}.`);
 }
