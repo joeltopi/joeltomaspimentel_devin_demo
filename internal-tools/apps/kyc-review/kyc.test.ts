@@ -156,6 +156,25 @@ describe("transition guards", () => {
     expect(row?.assigneeId).toBe(lena.id);
   });
 
+  it("refuses an info request by an analyst who does not hold the case", async () => {
+    const id = await makeCase({ status: "in_review", assignee: lena });
+    await expect(
+      runWithActor(kai, () => requestInfo(id, kai, { note: "need a bill" })),
+    ).rejects.toThrow(/assigned to/);
+    expect(await statusOf(id)).toBe("in_review");
+  });
+
+  it("does not overwrite a decision made after the guards were checked", async () => {
+    const id = await makeCase({ status: "in_review", assignee: kai });
+    const first = runWithActor(kai, () => approve(id, kai, { note: "approved first" }));
+    const second = runWithActor(lena, () => reject(id, lena, { note: "rejected second" }));
+
+    const outcomes = await Promise.allSettled([first, second]);
+    const winners = outcomes.filter((o) => o.status === "fulfilled");
+    expect(winners).toHaveLength(1);
+    expect(await statusOf(id)).toBe(winners[0] === outcomes[0] ? "approved" : "rejected");
+  });
+
   it("refuses a lead override on a decided case", async () => {
     const id = await makeCase({ status: "in_review", assignee: kai });
     await runWithActor(kai, () => reject(id, kai, { note: "document expired" }));

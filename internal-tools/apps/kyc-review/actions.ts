@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { db } from "@platform/db/client";
 import { getIntegration } from "@platform/integrations";
 import { assertCan, type Actor } from "@platform/permissions/can";
@@ -42,9 +43,34 @@ function requireDecisionRights(row: KycCaseRow, user: Actor): void {
   if (row.status !== "in_review") {
     throw new ActionError(`Case must be in review to decide; it is "${row.status}".`);
   }
-  if (user.role === "kyc_lead" || user.role === "admin") return;
+  if (isLead(user)) return;
   if (row.assigneeId !== user.id) {
     throw new ActionError(`Case is assigned to ${row.assigneeName ?? "someone else"}.`);
+  }
+}
+
+function isLead(user: Actor): boolean {
+  return user.role === "kyc_lead" || user.role === "admin";
+}
+
+function decisionGuard(user: Actor): Prisma.KycCaseWhereInput {
+  return isLead(user)
+    ? { status: "in_review" }
+    : { status: "in_review", assigneeId: user.id };
+}
+
+/**
+ * Writes only while the case still matches the state the guards were checked
+ * against, so two overlapping actions cannot overwrite each other's outcome.
+ */
+async function transition(
+  id: string,
+  expected: Prisma.KycCaseWhereInput,
+  data: Prisma.KycCaseUpdateManyMutationInput,
+): Promise<void> {
+  const { count } = await db.kycCase.updateMany({ where: { ...expected, id }, data });
+  if (count === 0) {
+    throw new ActionError("The case changed while you were working on it. Reload and try again.");
   }
 }
 
@@ -60,10 +86,11 @@ export async function claim(id: string, user: Actor): Promise<void> {
     throw new ActionError(`Only pending cases can be claimed; this one is "${row.status}".`);
   }
 
-  await db.kycCase.update({
-    where: { id },
-    data: { status: "in_review", assigneeId: user.id, assigneeName: user.name },
-  });
+  await transition(
+    id,
+    { status: "pending" },
+    { status: "in_review", assigneeId: user.id, assigneeName: user.name },
+  );
 }
 
 export async function approve(
@@ -77,9 +104,10 @@ export async function approve(
   const row = await loadCase(id);
   requireDecisionRights(row, user);
 
-  await db.kycCase.update({
-    where: { id },
-    data: { status: "approved", decisionBy: user.name, decisionNote: note },
+  await transition(id, decisionGuard(user), {
+    status: "approved",
+    decisionBy: user.name,
+    decisionNote: note,
   });
 
   await notifyApplicant(
@@ -96,9 +124,10 @@ export async function reject(id: string, user: Actor, input?: { note?: string })
   const row = await loadCase(id);
   requireDecisionRights(row, user);
 
-  await db.kycCase.update({
-    where: { id },
-    data: { status: "rejected", decisionBy: user.name, decisionNote: note },
+  await transition(id, decisionGuard(user), {
+    status: "rejected",
+    decisionBy: user.name,
+    decisionNote: note,
   });
 
   await notifyApplicant(
@@ -117,13 +146,12 @@ export async function requestInfo(
 
   const note = requireNote(input?.note);
   const row = await loadCase(id);
-  if (row.status !== "in_review") {
-    throw new ActionError(`Case must be in review to request info; it is "${row.status}".`);
-  }
+  requireDecisionRights(row, user);
 
-  await db.kycCase.update({
-    where: { id },
-    data: { status: "info_requested", decisionBy: user.name, decisionNote: note },
+  await transition(id, decisionGuard(user), {
+    status: "info_requested",
+    decisionBy: user.name,
+    decisionNote: note,
   });
 
   await notifyApplicant(
@@ -142,8 +170,9 @@ export async function override(id: string, user: Actor): Promise<void> {
     throw new ActionError(`Case is already ${row.status} and cannot be reopened.`);
   }
 
-  await db.kycCase.update({
-    where: { id },
-    data: { status: "in_review", assigneeId: user.id, assigneeName: user.name },
-  });
+  await transition(
+    id,
+    { status: { notIn: ["approved", "rejected"] } },
+    { status: "in_review", assigneeId: user.id, assigneeName: user.name },
+  );
 }
