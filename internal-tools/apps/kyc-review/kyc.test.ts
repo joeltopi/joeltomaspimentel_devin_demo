@@ -172,7 +172,16 @@ describe("transition guards", () => {
     const outcomes = await Promise.allSettled([first, second]);
     const winners = outcomes.filter((o) => o.status === "fulfilled");
     expect(winners).toHaveLength(1);
-    expect(await statusOf(id)).toBe(winners[0] === outcomes[0] ? "approved" : "rejected");
+
+    const kaiWon = winners[0] === outcomes[0];
+    expect(await statusOf(id)).toBe(kaiWon ? "approved" : "rejected");
+
+    // The losing action must not leave an audit row crediting it with the outcome.
+    const updates = await db.auditLog.findMany({
+      where: { model: "KycCase", recordId: id, action: "update" },
+    });
+    expect(updates).toHaveLength(1);
+    expect(updates[0].actorId).toBe(kaiWon ? kai.id : lena.id);
   });
 
   it("refuses a lead override on a decided case", async () => {

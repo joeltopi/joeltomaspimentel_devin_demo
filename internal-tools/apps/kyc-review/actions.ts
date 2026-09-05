@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { db } from "@platform/db/client";
 import { getIntegration } from "@platform/integrations";
 import { assertCan, type Actor } from "@platform/permissions/can";
@@ -60,17 +60,23 @@ function decisionGuard(user: Actor): Prisma.KycCaseWhereInput {
 }
 
 /**
- * Writes only while the case still matches the state the guards were checked
- * against, so two overlapping actions cannot overwrite each other's outcome.
+ * One atomic write that only lands while the case still matches the state the
+ * guards were checked against, so two overlapping actions cannot overwrite each
+ * other's outcome and the loser leaves no trace.
  */
 async function transition(
   id: string,
   expected: Prisma.KycCaseWhereInput,
-  data: Prisma.KycCaseUpdateManyMutationInput,
+  data: Prisma.KycCaseUpdateInput,
 ): Promise<void> {
-  const { count } = await db.kycCase.updateMany({ where: { ...expected, id }, data });
-  if (count === 0) {
-    throw new ActionError("The case changed while you were working on it. Reload and try again.");
+  const where = { ...expected, id } as Prisma.KycCaseWhereUniqueInput;
+  try {
+    await db.kycCase.update({ where, data });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      throw new ActionError("The case changed while you were working on it. Reload and try again.");
+    }
+    throw error;
   }
 }
 
