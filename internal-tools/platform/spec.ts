@@ -30,6 +30,12 @@ export type Field<R extends Row = Row> = {
   editableBy: Role[];
 };
 
+export type FilterSpec<R extends Row = Row> = {
+  field: keyof R & string;
+  label: string;
+  options: string[];
+};
+
 export type AppAction<R extends Row = Row> = {
   /** Must match an action in the permissions map for this app key. */
   key: string;
@@ -53,7 +59,7 @@ export type AppSpec<R extends Row = Row> = {
   transitions?: Record<string, string[]>;
   actions: Array<AppAction<R>>;
   defaultSort?: { field: keyof R & string; dir: "asc" | "desc" };
-  filters?: Array<{ field: keyof R & string; label: string; options: string[] }>;
+  filters?: Array<FilterSpec<R>>;
 };
 
 /** Thrown by app actions when a business guard fails; message is shown to the user. */
