@@ -1,6 +1,7 @@
 import { requireUser } from "@platform/auth/session";
 import { rawDb } from "@platform/db/raw";
-import { assertCan } from "@platform/permissions/can";
+import { can } from "@platform/permissions/can";
+import { Forbidden } from "@platform/ui/Forbidden";
 import { Shell } from "@platform/ui/Shell";
 import { StatusBadge } from "@platform/ui/StatusBadge";
 
@@ -22,7 +23,9 @@ export default async function AuditPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser();
-  assertCan(user, "audit", "read");
+  if (!can(user, "audit", "read")) {
+    return <Forbidden user={user} resource="audit" action="read" />;
+  }
 
   const query = await searchParams;
   const where: Record<string, string> = {};
