@@ -46,3 +46,43 @@ renders an empty grid — session 2 adds the first app.
   middleware pass would be defence in depth.
 - No pagination or search on list views (hard cap of 200 rows).
 - Audit `before`/`after` diffing is a simple field comparison, not a real diff.
+
+## Session 2 — KYC review app
+
+- Session: https://app.devin.ai/sessions/c5d8731e0e2a41a2b4b38a21e265c60b
+- Brief: `devin/02-kyc-brief.md`
+- Start: 2026-09-05 20:19 UTC
+- End: 2026-09-05 20:35 UTC
+- Elapsed: ~16 min
+- Review comments: (fill in after review)
+
+### What shipped
+
+`KycCase` model and migration, `apps/kyc-review/` (spec, actions, tests,
+README), one registry line, and 20 seeded cases. Nothing in `platform/` or
+`src/app/` changed, which was the point of the exercise: the second app is a
+folder plus a line.
+
+### Decisions
+
+- **An analyst may only decide on a case assigned to them; a lead may decide on
+  any case in review.** The brief's "lead may override" is read as the lead's
+  decision rights, on top of the explicit `override` action that reassigns.
+- **Guards live in `actions.ts`, not in the spec's `visibleWhen`.** `visibleWhen`
+  only hides buttons that cannot apply in the current status; every rule is
+  re-checked server-side, so a hand-crafted action call fails the same way.
+- **The registry widens the spec's row type with one cast.** Specs are written
+  against their own row type for field-name checking, and `AppSpec<KycCaseRow>`
+  is not assignable to `AppSpec<Row>` because `visibleWhen` takes the row. The
+  alternative — untyped specs — loses the checking that matters when writing an
+  app.
+- **The test registers its own model→app mapping.** `apps/registry.ts` does this
+  at import time, and an app must not import the registry.
+
+### Cut
+
+- No transition enforcement in the generic layer: `spec.transitions` documents
+  the state machine and the actions enforce it. A platform-level check that
+  every action's target status is a declared transition would be better.
+- Risk flags are a plain string array with no vocabulary; a real system would
+  key them to a checks provider.
