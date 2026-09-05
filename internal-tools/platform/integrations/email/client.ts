@@ -5,10 +5,12 @@ import { IntegrationError, type EmailIntegration } from "../types";
 export const emailClient: EmailIntegration = {
   name: "email",
   async send(to, subject, body) {
+    // Audited before anything can fail, so a misconfigured deployment still
+    // leaves a record of what an app tried to send.
+    await auditIntegrationCall("email", "send", [to, subject, body]);
+
     const apiKey = integrationConfig.email.apiKey();
     if (!apiKey) throw new IntegrationError("email", "EMAIL_API_KEY is not set");
-
-    await auditIntegrationCall("email", "send", [to, subject, body]);
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
