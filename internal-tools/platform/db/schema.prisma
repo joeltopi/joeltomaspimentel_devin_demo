@@ -42,6 +42,26 @@ model AuditLog {
 // App: kyc-review  (added in session 2)
 // ---------------------------------------------------------------------------
 
+model KycCase {
+  id             String   @id @default(cuid())
+  applicantName  String
+  applicantEmail String
+  country        String
+  documentType   String // passport | drivers_license | national_id
+  documentRef    String // fake reference, not a real document
+  riskFlags      String[] // e.g. ["pep_match", "address_mismatch"]
+  status         String   @default("pending") // pending | in_review | info_requested | approved | rejected
+  assigneeId     String?
+  assigneeName   String?
+  decisionBy     String?
+  decisionNote   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([country])
+}
+
 // ---------------------------------------------------------------------------
 // App: fraud-review  (added in session 3)
 // ---------------------------------------------------------------------------
