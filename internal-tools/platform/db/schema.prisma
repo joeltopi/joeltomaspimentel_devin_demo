@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Platform models
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  at        DateTime @default(now())
+  actorId   String?
+  actorName String?
+  actorRole String?
+  app       String?
+  model     String
+  recordId  String?
+  action    String
+  before    Json?
+  after     Json?
+  meta      Json?
+
+  @@index([at])
+  @@index([app])
+  @@index([model, recordId])
+}
+
+// ---------------------------------------------------------------------------
+// App: kyc-review  (added in session 2)
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// App: fraud-review  (added in session 3)
+// ---------------------------------------------------------------------------

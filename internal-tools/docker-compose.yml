@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: internal-tools-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: internal
+      POSTGRES_PASSWORD: internal
+      POSTGRES_DB: internal_tools
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U internal -d internal_tools"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:
