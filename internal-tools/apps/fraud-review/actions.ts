@@ -40,16 +40,16 @@ export type FraudTransactionRow = {
 };
 
 /**
- * The rule that puts a transaction in this queue: anything above $1k to a
- * destination the customer has never paid, and anything above $10k even to one
- * they have. Everything else settles without a human.
+ * The rule that puts a transaction in this queue: $1k or more to a destination
+ * the customer has never paid, and $10k or more even to one they have.
+ * Everything else settles without a human.
  */
 export function flagReasonFor(
   amount: number,
   destinationKnown: boolean,
 ): FraudFlagReason | null {
-  if (!destinationKnown && amount > NEW_DESTINATION_THRESHOLD) return "new_destination";
-  if (amount > HIGH_VALUE_THRESHOLD) return "high_value";
+  if (!destinationKnown && amount >= NEW_DESTINATION_THRESHOLD) return "new_destination";
+  if (amount >= HIGH_VALUE_THRESHOLD) return "high_value";
   return null;
 }
 

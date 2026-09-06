@@ -106,13 +106,13 @@ column can be filtered.
 ### Decisions
 
 - **The hold rule is code, not a comment.** `flagReasonFor(amount,
-  destinationKnown)` returns `new_destination` above $1,000 to a destination the
-  customer has not paid, `high_value` above $10,000 to one they have, and `null`
-  otherwise. The model stores `destination`, `destinationKnown` and the resulting
+  destinationKnown)` returns `new_destination` at $1,000 or more to a
+  destination the customer has not paid, `high_value` at $10,000 or more to one
+  they have, and `null` otherwise. The model stores `destination`, `destinationKnown` and the resulting
   `flagReason` so an analyst sees why a payment was stopped, and the seed refuses
   a fixture the rule would not have held.
 - **The brief's "$40 to $48,000" seed range was not used.** Under the hold rule
-  a $40 payment never reaches this queue; fixtures start just above $1,000.
+  a $40 payment never reaches this queue; fixtures start at $1,000.
 - **Filtering a `String[]` column needed one platform line.** `FilterSpec.multi`
   makes the generic list query use `{ has: value }`, which is the smallest
   generic thing that supports the brief's `riskReasons` filter.

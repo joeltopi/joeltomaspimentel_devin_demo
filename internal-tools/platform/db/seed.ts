@@ -95,9 +95,9 @@ type FraudFixture = {
 };
 
 /**
- * fraud-review fixtures. Every row is one the hold rule caught: above $1,000 to
- * a destination the customer has not paid before, or above $10,000 to one they
- * have. Customers, merchants and destinations are invented.
+ * fraud-review fixtures. Every row is one the hold rule caught: $1,000 or more
+ * to a destination the customer has not paid before, or $10,000 or more to one
+ * they have. Customers, merchants and destinations are invented.
  */
 const FRAUD_TRANSACTIONS: FraudFixture[] = [
   { customerName: "Amara Okafor", amount: 1_240.5, merchant: "Northgate Electronics", destination: "Northgate Electronics", destinationKnown: false, channel: "card_not_present", riskScore: 52, riskReasons: ["new_device"], status: "held" },
@@ -130,6 +130,8 @@ const FRAUD_TRANSACTIONS: FraudFixture[] = [
   { customerName: "Ben Carter", amount: 4_000, merchant: "Carter Studio Gear", destination: "Carter Studio Gear", destinationKnown: false, channel: "card_not_present", riskScore: 57, riskReasons: ["new_device"], status: "in_review", assignee: "farid@example.com" },
   { customerName: "Clara Moretti", amount: 6_240.3, merchant: "Milano Design", destination: "Milano Design", destinationKnown: false, channel: "card_not_present", riskScore: 68, riskReasons: ["geo_mismatch", "velocity"], status: "in_review", assignee: "farid@example.com" },
   { customerName: "Dmitri Volkov", amount: 9_100, merchant: "Volkov Freight", destination: "Volkov Freight", destinationKnown: false, channel: "transfer", riskScore: 77, riskReasons: ["amount_anomaly"], status: "in_review", assignee: "farid@example.com" },
+  { customerName: "Wren Kavanagh", amount: 1_000, merchant: "Kavanagh Studio", destination: "Kavanagh Studio", destinationKnown: false, channel: "transfer", riskScore: 49, riskReasons: ["new_device"], status: "held" },
+  { customerName: "Yusuf Demir", amount: 10_000, merchant: "Demir Machinery", destination: "Demir Machinery", destinationKnown: true, channel: "transfer", riskScore: 72, riskReasons: ["amount_anomaly"], status: "held" },
   { customerName: "Eve Nakamura", amount: 27_500, merchant: "Sakura Estates", destination: "Sakura Estates", destinationKnown: true, channel: "transfer", riskScore: 95, riskReasons: ["amount_anomaly", "geo_mismatch"], status: "pending_lead" },
 ];
 
@@ -138,8 +140,8 @@ const HIGH_VALUE_HOLD = 10_000;
 
 /** Mirrors `flagReasonFor` in the app; the seed may not import from `apps/`. */
 function flagReasonFor(amount: number, destinationKnown: boolean): string {
-  if (!destinationKnown && amount > NEW_DESTINATION_HOLD) return "new_destination";
-  if (amount > HIGH_VALUE_HOLD) return "high_value";
+  if (!destinationKnown && amount >= NEW_DESTINATION_HOLD) return "new_destination";
+  if (amount >= HIGH_VALUE_HOLD) return "high_value";
   throw new Error(`Fixture of ${amount} to a known destination would not be held.`);
 }
 

@@ -81,19 +81,20 @@ afterEach(async () => {
 });
 
 describe("hold rule", () => {
-  it("holds anything above $1,000 to a destination the customer has not paid", () => {
+  it("holds $1,000 or more to a destination the customer has not paid", () => {
+    expect(flagReasonFor(NEW_DESTINATION_THRESHOLD, false)).toBe("new_destination");
     expect(flagReasonFor(NEW_DESTINATION_THRESHOLD + 0.01, false)).toBe("new_destination");
     expect(flagReasonFor(25_000, false)).toBe("new_destination");
   });
 
-  it("lets a small payment to a new destination settle", () => {
-    expect(flagReasonFor(NEW_DESTINATION_THRESHOLD, false)).toBeNull();
+  it("lets a smaller payment to a new destination settle", () => {
+    expect(flagReasonFor(NEW_DESTINATION_THRESHOLD - 0.01, false)).toBeNull();
     expect(isFlagged(999, false)).toBe(false);
   });
 
-  it("holds a known destination only above $10,000", () => {
-    expect(flagReasonFor(HIGH_VALUE_THRESHOLD, true)).toBeNull();
-    expect(flagReasonFor(HIGH_VALUE_THRESHOLD + 0.01, true)).toBe("high_value");
+  it("holds a known destination from $10,000 up", () => {
+    expect(flagReasonFor(HIGH_VALUE_THRESHOLD, true)).toBe("high_value");
+    expect(flagReasonFor(HIGH_VALUE_THRESHOLD - 0.01, true)).toBeNull();
     expect(isFlagged(9_500, true)).toBe(false);
   });
 });

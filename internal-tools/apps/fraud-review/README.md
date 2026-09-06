@@ -15,8 +15,8 @@ PoC). Every decision carries a note and lands in the audit log.
 ## What lands in the queue
 
 ```
-amount > $1,000  and the customer has not paid this destination before  → new_destination
-amount > $10,000 and they have                                          → high_value
+amount >= $1,000  and the customer has not paid this destination before  → new_destination
+amount >= $10,000 and they have                                          → high_value
 ```
 
 `flagReasonFor(amount, destinationKnown)` in `actions.ts` is that rule; it
