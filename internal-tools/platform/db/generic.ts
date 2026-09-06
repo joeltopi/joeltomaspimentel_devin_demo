@@ -32,8 +32,9 @@ export async function listRecords(
   const where: Record<string, unknown> = {};
   for (const [field, value] of Object.entries(filters)) {
     if (!value) continue;
-    if (!spec.filters?.some((filter) => filter.field === field)) continue;
-    where[field] = value;
+    const filter = spec.filters?.find((candidate) => candidate.field === field);
+    if (!filter) continue;
+    where[field] = filter.multi ? { has: value } : value;
   }
 
   return delegateFor(spec).findMany({

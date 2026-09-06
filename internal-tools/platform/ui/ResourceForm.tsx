@@ -25,10 +25,16 @@ export function ResourceForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [values, setValues] = useState<Record<string, string>>(
-    Object.fromEntries(fields.map((field) => [field.field, field.value])),
-  );
+  const serverValues = Object.fromEntries(fields.map((field) => [field.field, field.value]));
+  const serverKey = fields.map((field) => `${field.field}=${field.value}`).join("\u0000");
+  const [values, setValues] = useState<Record<string, string>>(serverValues);
+  const [renderedKey, setRenderedKey] = useState(serverKey);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  if (serverKey !== renderedKey) {
+    setRenderedKey(serverKey);
+    setValues(serverValues);
+  }
 
   const editable = fields.filter((field) => field.editable);
 

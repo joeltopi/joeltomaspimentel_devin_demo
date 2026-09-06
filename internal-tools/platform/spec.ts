@@ -34,6 +34,8 @@ export type FilterSpec<R extends Row = Row> = {
   field: keyof R & string;
   label: string;
   options: string[];
+  /** The field holds a list; the chosen option matches when the list contains it. */
+  multi?: boolean;
 };
 
 export type AppAction<R extends Row = Row> = {

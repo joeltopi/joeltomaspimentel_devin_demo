@@ -1,5 +1,6 @@
 import { registerAppModel } from "@platform/audit/appIndex";
 import type { AppSpec } from "@platform/spec";
+import { fraudReview } from "./fraud-review/spec";
 import { kycReview } from "./kyc-review/spec";
 
 /**
@@ -8,7 +9,7 @@ import { kycReview } from "./kyc-review/spec";
  */
 // Specs are written against their own row type; the registry and the generic
 // routes only ever read them, so widening to the untyped row shape is safe.
-export const APPS: AppSpec[] = [kycReview as AppSpec];
+export const APPS: AppSpec[] = [kycReview as AppSpec, fraudReview as AppSpec];
 
 for (const app of APPS) registerAppModel(app.model, app.key);
 

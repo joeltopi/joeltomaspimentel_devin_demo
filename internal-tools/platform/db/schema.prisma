@@ -65,3 +65,29 @@ model KycCase {
 // ---------------------------------------------------------------------------
 // App: fraud-review  (added in session 3)
 // ---------------------------------------------------------------------------
+
+model FraudHeldTransaction {
+  id              String   @id @default(cuid())
+  customerId      String
+  customerName    String
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String   @default("USD")
+  merchant        String
+  destination     String // counterparty the money is going to
+  destinationKnown Boolean @default(false) // seen on this customer's history before
+  flagReason      String // new_destination | high_value
+  channel         String // card_present | card_not_present | transfer
+  riskScore       Int // 0-100
+  riskReasons     String[] // velocity | geo_mismatch | new_device | card_testing | amount_anomaly
+  status          String   @default("held") // held | in_review | pending_lead | released | confirmed_fraud
+  assigneeId      String?
+  assigneeName    String?
+  decisionBy      String?
+  decisionNote    String?
+  heldAt          DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([channel])
+  @@index([riskScore])
+}
