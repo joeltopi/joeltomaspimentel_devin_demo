@@ -13,7 +13,9 @@ import { StatusBadge } from "@platform/ui/StatusBadge";
 
 function toInputValue(value: unknown): string {
   if (value === null || value === undefined) return "";
-  if (Array.isArray(value) || typeof value === "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return value.join(", ");
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "object") return String(value);
   return String(value);
 }
 
