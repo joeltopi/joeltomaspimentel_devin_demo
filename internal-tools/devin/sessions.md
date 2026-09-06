@@ -86,3 +86,45 @@ folder plus a line.
   every action's target status is a declared transition would be better.
 - Risk flags are a plain string array with no vocabulary; a real system would
   key them to a checks provider.
+
+## Session 3 — Fraud review app
+
+- Session: https://app.devin.ai/sessions/5d36a06c57a24d05adadf9837e4bec1d
+- Brief: `devin/03-fraud-brief.md`
+- Start: 2026-09-06 10:06 UTC
+- End: 2026-09-06 10:25 UTC
+- Elapsed: ~20 min
+- Review comments: (fill in after review)
+
+### What shipped
+
+`FraudHeldTransaction` model and migration, `apps/fraud-review/` (spec, actions,
+tests, README), one registry line, and 31 seeded held transactions. The only
+platform change is an optional `multi` flag on `FilterSpec`, so a list-valued
+column can be filtered.
+
+### Decisions
+
+- **The hold rule is code, not a comment.** `flagReasonFor(amount,
+  destinationKnown)` returns `new_destination` above $1,000 to a destination the
+  customer has not paid, `high_value` above $10,000 to one they have, and `null`
+  otherwise. The model stores `destination`, `destinationKnown` and the resulting
+  `flagReason` so an analyst sees why a payment was stopped, and the seed refuses
+  a fixture the rule would not have held.
+- **The brief's "$40 to $48,000" seed range was not used.** Under the hold rule
+  a $40 payment never reaches this queue; fixtures start just above $1,000.
+- **Filtering a `String[]` column needed one platform line.** `FilterSpec.multi`
+  makes the generic list query use `{ has: value }`, which is the smallest
+  generic thing that supports the brief's `riskReasons` filter.
+- **A release below the threshold is not announced.** Only confirmed fraud and
+  high-value releases post to `#fraud-ops`; announcing every release would make
+  the channel unreadable.
+- **The lead's decision on a `pending_lead` row is the high-value approval.**
+  There is no `approveHighValue` action; the permission key documents the rule.
+
+### Cut
+
+- Nothing recomputes `destinationKnown` or the hold decision — it arrives with
+  the transaction. A real system holds the payment at the processor.
+- No four-eyes rule beyond the threshold, no SLA or ageing on the queue, no bulk
+  actions.
