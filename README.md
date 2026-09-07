@@ -141,10 +141,3 @@ Other commands (from `internal-tools/`):
 | `npm run build` | production build |
 | `npm run db:reset` | drop, migrate and reseed |
 
-## Adding a third app
-
-1. Write a brief in `internal-tools/devin/` (see `03-fraud-brief.md` for the shape).
-2. Start a Devin session with it. The expected PR: `apps/<name>/`, a Prisma
-   model and migration, seed fixtures, permission entries, one line in
-   `apps/registry.ts`, a session entry in `devin/sessions.md`.
-3. Review against the conventions; `npm run lint` catches the structural ones.
