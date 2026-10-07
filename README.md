@@ -7,6 +7,7 @@ app on top of it. It is a direct answer to the "just use Power Apps" argument:
 same speed of delivery, but with real code, real tests, real access control and
 an audit trail the team controls.
 
+
 The claim under test is simple: **the first app costs a platform; every app
 after that costs a folder, a spec and one Devin session.**
 
